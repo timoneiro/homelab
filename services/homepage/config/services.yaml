@@ -74,6 +74,18 @@
           key: "{{HOMEPAGE_VAR_IMMICH_API_KEY}}"
           version: 2 # Immich >= v1.118 renamed /api/server-info/* to /api/server/*
 
+- Finance:
+    - Actual:
+        href: https://caixinha.tailb8611d.ts.net:9443
+        description: Personal finance & budgeting
+        icon: actual-budget.png
+        # Needs HTTPS everywhere, even from home -- Actual requires
+        # SharedArrayBuffer, which browsers only allow in a secure context.
+        # Plain http://100.66.227.104:5006 fails with a SharedArrayBuffer
+        # error, so this is fronted via `tailscale serve --https=9443
+        # --bg localhost:5006` (run in the tailscale container's console)
+        # instead of the direct-port pattern everything else here uses.
+
 - Network & Host:
     - Pi-hole:
         href: http://192.168.1.254/admin
