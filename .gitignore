@@ -1,0 +1,49 @@
+# --- Secrets & credentials -------------------------------------------------
+.env
+*.env
+!*.env.example
+secrets.yaml
+secrets.yml
+*.secret
+*_secret*
+*.key
+*.pem
+!*.pub
+id_rsa*
+!id_rsa*.pub
+known_hosts
+credentials.json
+*.token
+.netrc
+kubeconfig*
+acme.json
+**/traefik/acme.json
+**/wg-configs/*.conf
+*.p12
+*.pfx
+*.jks
+htpasswd
+.htpasswd
+
+# --- Runtime state / data (host-specific, not "config") --------------------
+**/data/
+**/db/
+*.sqlite3
+*.sqlite
+*.db
+*.log
+*.log.*
+
+# Tailscale state dir (contains this node's own keys once authenticated)
+services/tailscale/lib/
+
+# --- OS / editor cruft -------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# --- Local AI assistant context (contains real internal network details) ---
+CLAUDE.md

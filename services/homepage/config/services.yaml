@@ -1,0 +1,108 @@
+---
+- Media Requests & Automation:
+    - Seerr:
+        href: http://100.66.227.104:5055
+        description: Request movies & TV shows
+        icon: overseerr.png
+        # Seerr is Jellyseerr's 2026 successor (ghcr.io/seerr-team/seerr).
+        # Its API may not exactly match Homepage's "jellyseerr" widget type
+        # yet -- verify at gethomepage.dev/widgets before adding a widget: here.
+
+    - Jellyfin:
+        href: http://100.66.227.104:8096
+        description: Media server
+        icon: jellyfin.png
+        # Jellyfin isn't in this repo's compose files -- it's deployed
+        # separately, straight through UGOS. Widget needs its own API key
+        # (Dashboard -> API Keys) if you want live stats here.
+
+    - Sonarr:
+        href: http://100.66.227.104:8989
+        description: TV show automation
+        icon: sonarr.png
+        widget:
+          type: sonarr
+          url: http://host.docker.internal:8989
+          key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+
+    - Radarr:
+        href: http://100.66.227.104:7878
+        description: Movie automation
+        icon: radarr.png
+        widget:
+          type: radarr
+          url: http://host.docker.internal:7878
+          key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+
+- Downloads & Indexing:
+    - Prowlarr:
+        href: http://100.66.227.104:9696
+        description: Indexer management
+        icon: prowlarr.png
+        widget:
+          type: prowlarr
+          url: http://host.docker.internal:9696
+          key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
+
+    - Bazarr:
+        href: http://100.66.227.104:6767
+        description: Subtitle management
+        icon: bazarr.png
+        widget:
+          type: bazarr
+          url: http://host.docker.internal:6767
+          key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+
+    - qBittorrent:
+        href: http://100.66.227.104:8080
+        description: Torrent client
+        icon: qbittorrent.png
+        widget:
+          type: qbittorrent
+          url: http://host.docker.internal:8080
+          username: "{{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}"
+
+- Photos:
+    - Immich:
+        href: http://100.66.227.104:2283
+        description: Photo & video backup
+        icon: immich.png
+        widget:
+          type: immich
+          url: http://host.docker.internal:2283
+          key: "{{HOMEPAGE_VAR_IMMICH_API_KEY}}"
+          version: 2 # Immich >= v1.118 renamed /api/server-info/* to /api/server/*
+
+- Network & Host:
+    - Pi-hole:
+        href: http://192.168.1.254/admin
+        description: DNS ad-blocking
+        icon: pi-hole.png
+        # href is LAN IP, not the tailscale IP like everything else here --
+        # Pi-hole sits on its own macvlan network (see services/tailscale),
+        # which the tailnet can't reach directly (macvlan host-isolation).
+        # A dns-relay service forwards *DNS* (port 53) queries from
+        # 100.66.227.104 to Pi-hole tailnet-wide, but that doesn't help
+        # this link -- it's HTTP (port 80), which the relay doesn't proxy.
+        # So this card's link still only works from home Wi-Fi.
+        widget:
+          type: pihole
+          # NOT the same 192.168.1.254 as href above -- this is fetched
+          # server-side by the homepage container itself, which (like the
+          # host) can't reach Pi-hole's macvlan IP. Uses Pi-hole's other,
+          # non-macvlan IP on the tailscale_dns_relay bridge network
+          # instead (see homepage's docker-compose.yml networks: block).
+          url: http://172.21.0.2
+          version: 6
+          key: "{{HOMEPAGE_VAR_PIHOLE_PASSWORD}}"
+
+    - UGOS:
+        href: http://100.66.227.104
+        description: NAS admin -- Docker GUI, storage, apps
+        icon: ugreen-nas.png
+
+    - Tailscale Admin:
+        href: https://login.tailscale.com/admin/machines
+        description: caixinha subnet router
+        icon: tailscale.png

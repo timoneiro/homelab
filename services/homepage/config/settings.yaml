@@ -1,0 +1,18 @@
+title: Caixinha
+theme: dark
+color: slate
+headerStyle: clean
+
+layout:
+  Media Requests & Automation:
+    style: row
+    columns: 3
+  Downloads & Indexing:
+    style: row
+    columns: 3
+  Photos:
+    style: row
+    columns: 2
+  Network & Host:
+    style: row
+    columns: 3
