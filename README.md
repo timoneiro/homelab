@@ -10,6 +10,7 @@ for what that changes about how these compose files are written.
 
 | Service | What it is | Notable pieces |
 |---|---|---|
+| [`actual`](services/actual/) | Personal finance / budgeting | Single container, SQLite storage under `./data`, no secrets needed |
 | [`arr`](services/arr/) | Media automation stack | Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (request management), Unpackerr |
 | [`immich`](services/immich/) | Self-hosted photo/video backup | Stock upstream compose file, unmodified |
 | [`homepage`](services/homepage/) | Dashboard for everything else | Live-stats widgets for most services below |

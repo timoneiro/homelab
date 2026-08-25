@@ -1,0 +1,12 @@
+services:
+  actual:
+    container_name: actual
+    image: docker.io/actualbudget/actual-server:latest
+    pull_policy: always
+    env_file:
+      - .env
+    ports:
+      - 5006:5006
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
