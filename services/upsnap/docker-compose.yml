@@ -1,0 +1,18 @@
+services:
+  upsnap:
+    container_name: upsnap
+    image: ghcr.io/seriousm4x/upsnap:5
+    pull_policy: always
+    # Required: Wake-on-LAN magic packets are layer-2 broadcasts. From a
+    # bridge-networked container they'd only reach the Docker bridge, never
+    # the physical LAN the target PC is on.
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Etc/UTC}
+      # Host networking means this binds directly on the NAS, so the port
+      # must not clash with anything else running on the host.
+      - UPSNAP_HTTP_LISTEN=0.0.0.0:8090
+    volumes:
+      # PocketBase database: device list, users, schedules.
+      - ./data:/app/pb_data

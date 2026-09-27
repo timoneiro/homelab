@@ -1,0 +1,33 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    pull_policy: always
+    ports:
+      - 3000:3000
+    volumes:
+      - ./config:/app/config
+    env_file:
+      - .env
+    extra_hosts:
+      # Same hairpin-NAT fix used for jellyseerr -> jellyfin: containers on
+      # this NAS can't reach the NAS's own LAN IP, so widgets call services
+      # via host.docker.internal instead of 192.168.1.245.
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      # Pi-hole's macvlan IP (192.168.1.254) isn't reachable from here --
+      # same macvlan host-isolation issue as services/tailscale, this time
+      # hitting a regular bridge-networked container instead of the host
+      # itself. Pi-hole's widget instead calls it over this network, at
+      # its non-macvlan IP (172.21.0.2). Defined in services/tailscale's
+      # compose file; referenced here as external since it's a different
+      # compose project.
+      - dns_relay
+    restart: unless-stopped
+
+networks:
+  default: {}
+  dns_relay:
+    external: true
+    name: tailscale_dns_relay
