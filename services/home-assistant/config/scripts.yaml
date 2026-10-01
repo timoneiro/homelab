@@ -1,0 +1,13 @@
+fan_toggle_swing:
+  alias: Fan swing on/off
+  description: >-
+    Toggles the fan's oscillation, for the dashboard's Swing button (a button
+    can only call a fixed action, and fan.oscillate needs on or off).
+  icon: mdi:arrow-oscillating
+  mode: single
+  sequence:
+    - action: fan.oscillate
+      target:
+        entity_id: fan.fresquinho
+      data:
+        oscillating: "{{ not state_attr('fan.fresquinho', 'oscillating') }}"

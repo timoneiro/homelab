@@ -50,6 +50,7 @@ services/home-assistant/config/*
 !services/home-assistant/config/automations.yaml
 !services/home-assistant/config/scripts.yaml
 !services/home-assistant/config/scenes.yaml
+!services/home-assistant/config/themes/
 
 # --- OS / editor cruft -------------------------------------------------------
 .DS_Store

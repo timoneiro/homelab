@@ -21,6 +21,11 @@ services:
       # in Settings -> System -> Network -> HTTP server keeps it on loopback,
       # reached through `tailscale serve` (see the README).
       - ./config:/config
+      # An empty folder on the NAS's large data volume, mounted read-only only
+      # so System Monitor can report that volume's size and free space (any
+      # folder reports its whole volume). It gives Home Assistant no access to
+      # the media or home folders on that volume.
+      - /volume1/jellyfin/.home-assistant-volume1:/media/volume1:ro
 
   mosquitto:
     container_name: mosquitto

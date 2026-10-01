@@ -1,1 +1,249 @@
-[]
+# Kept in this repo and copied to the NAS; reload with Developer tools ->
+# YAML -> Automations (or a restart). Automations created in the UI are also
+# saved to this file on the NAS, so copy the live file back here before
+# overwriting it.
+
+# --- Heater ------------------------------------------------------------------
+# The heater plug draws well over 100 W while heating and almost nothing on
+# standby. Nothing switches off on its own: someone else may be home and using
+# it, so the phone gets a "Turn off" button instead.
+
+- id: heater_on_for_hours
+  alias: Heater on for 3 hours
+  description: Warn when the heater has been heating non-stop for 3 hours.
+  mode: single
+  triggers:
+    - trigger: numeric_state
+      entity_id: sensor.heater_plug_power
+      above: 100
+      for: "03:00:00"
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: Heater still on
+        message: The heater has been running for 3 hours.
+        data:
+          tag: heater
+          actions:
+            - action: HEATER_OFF
+              title: Turn off
+
+- id: heater_off_from_notification
+  alias: Turn heater off from notification
+  description: Handles the "Turn off" button on the heater notifications.
+  mode: single
+  triggers:
+    - trigger: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: HEATER_OFF
+  actions:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.heater_plug
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: Heater off
+        message: The heater plug has been switched off.
+        data:
+          tag: heater
+
+# --- Dehumidifier ------------------------------------------------------------
+# The dehumidifier runs until its tank is full, then stops drawing power while
+# the plug stays on. A numeric_state trigger only fires when the power crosses
+# the threshold, so this needs a real run beforehand and won't fire for a tank
+# that was already full. The plug also powers a vacuum, whose charging can hold
+# the reading above 5 W and delay the alert until charging ends.
+
+- id: dehumidifier_tank_full
+  alias: Dehumidifier tank full
+  description: Warn when the dehumidifier stops drawing power while its plug is on.
+  mode: single
+  triggers:
+    - trigger: numeric_state
+      entity_id: sensor.dehumidifier_plug_power
+      below: 5
+      for: "00:10:00"
+  conditions:
+    - condition: state
+      entity_id: switch.dehumidifier_plug
+      state: "on"
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: Dehumidifier tank full
+        message: The dehumidifier has stopped. Empty the tank to restart it.
+        data:
+          tag: dehumidifier
+
+# --- Robot vacuum (Tininha) ----------------------------------------------------
+
+- id: vacuum_clean_finished
+  alias: Vacuum finished cleaning
+  description: Notify when the robot vacuum reports the end of a clean.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: event.tininha_clean_end
+      not_from:
+        - unavailable
+        - unknown
+      not_to:
+        - unavailable
+        - unknown
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: Tininha finished
+        message: The robot vacuum has finished cleaning.
+        data:
+          tag: vacuum
+
+- id: vacuum_stuck
+  alias: Vacuum stuck or in error
+  description: Notify when the robot vacuum stops with an error.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: vacuum.tininha
+      to: error
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: Tininha needs help
+        message: >-
+          The robot vacuum stopped with an error:
+          {{ states('sensor.tininha_fault') }}.
+        data:
+          tag: vacuum
+
+# --- Pi-hole -----------------------------------------------------------------
+# Every device in the house resolves names through Pi-hole, so if it stops the
+# whole house loses the internet. Its entities go unavailable when Home
+# Assistant can't reach Pi-hole's API, which is the closest signal to "down".
+
+- id: pihole_down
+  alias: Pi-hole down or back
+  description: Warn when Pi-hole stops answering, and say when it is back.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: switch.pi_hole
+      to: unavailable
+      for: "00:03:00"
+      id: down
+    - trigger: state
+      entity_id: switch.pi_hole
+      from: unavailable
+      id: back
+  conditions:
+    # Only report a recovery after a real outage, not after a restart.
+    - condition: or
+      conditions:
+        - condition: trigger
+          id: down
+        - condition: template
+          value_template: >-
+            {{ (now() - trigger.from_state.last_changed).total_seconds() > 180 }}
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: "{{ 'Pi-hole is down' if trigger.id == 'down' else 'Pi-hole is back' }}"
+        message: >-
+          {{ 'Pi-hole has not answered for 3 minutes. Websites may not load
+          anywhere in the house.' if trigger.id == 'down' else
+          'Pi-hole is answering again.' }}
+        data:
+          tag: pihole
+
+# --- qBittorrent -------------------------------------------------------------
+# While the gaming PC is awake, qBittorrent switches to its alternative
+# (slower) speed limits so game streaming gets the bandwidth. The limits
+# themselves are set in qBittorrent: Options -> Speed -> Alternative Rate
+# Limits.
+
+- id: qbittorrent_slow_while_gaming
+  alias: Slow downloads while the gaming PC is on
+  description: Turn on qBittorrent's alternative speed limits while the gaming PC is awake.
+  mode: restart
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.gaming_pc
+      to: "on"
+      id: awake
+    - trigger: state
+      entity_id: binary_sensor.gaming_pc
+      to: "off"
+      for: "00:05:00"
+      id: asleep
+  actions:
+    - action: "switch.turn_{{ 'on' if trigger.id == 'awake' else 'off' }}"
+      target:
+        entity_id: switch.qbittorrent_alternative_speed
+# --- Weather -----------------------------------------------------------------
+# IPMA issues warnings per district. The area IPMA picked from Home Assistant's
+# home location is read from its device name, and the district from the
+# warning's area code, so the alert says exactly which region it is about
+# without the location being written into this file. IPMA's sensor only holds
+# the first active warning.
+
+- id: ipma_warning
+  alias: IPMA orange or red weather warning
+  description: Notify when IPMA issues an orange or red warning for the home district.
+  mode: queued
+  triggers:
+    - trigger: state
+      entity_id: sensor.porto_ipma_weather_alert
+      to:
+        - orange
+        - red
+  variables:
+    districts:
+      AVR: Aveiro
+      BJA: Beja
+      BRG: Braga
+      BGC: Bragança
+      CBO: Castelo Branco
+      CBR: Coimbra
+      EVR: Évora
+      FAR: Faro
+      GDA: Guarda
+      LRA: Leiria
+      LSB: Lisboa
+      PTG: Portalegre
+      PTO: Porto
+      STM: Santarém
+      STB: Setúbal
+      VCT: Viana do Castelo
+      VRL: Vila Real
+      VIS: Viseu
+      MCN: Madeira (north coast)
+      MCS: Madeira (south coast)
+      MRM: Madeira (mountains)
+      MPS: Porto Santo
+      AOR: Azores (eastern group)
+      ACE: Azores (central group)
+      AOC: Azores (western group)
+    a: "{{ trigger.to_state.attributes }}"
+    code: "{{ a.idAreaAviso | default('') }}"
+    district: "{{ districts[code] if code in districts else code }}"
+    area: "{{ device_attr(device_id('sensor.porto_ipma_weather_alert'), 'name') }}"
+    level: "{{ trigger.to_state.state }}"
+  actions:
+    - action: notify.mobile_app_s24_ultra
+      data:
+        title: >-
+          {{ '🔴 Red' if level == 'red' else '🟠 Orange' }} warning:
+          {{ a.awarenessTypeName | default('weather') }}
+        message: >-
+          {% macro when(x) -%}
+            {%- set d = as_datetime(x) -%}
+            {%- if d is none -%}?{%- else -%}{{ (as_local(d) if d.tzinfo else d).strftime('%a %d, %H:%M') }}{%- endif -%}
+          {%- endmacro -%}
+          {{ district }} district (IPMA area {{ area }}).
+          {%- if a.startTime is defined %} From {{ when(a.startTime) }} to {{ when(a.endTime) }}.{% endif %}
+          {{ a.text | default('') }}
+        data:
+          tag: ipma
+          url: https://www.ipma.pt/en/otempo/prev-sam/
+          clickAction: https://www.ipma.pt/en/otempo/prev-sam/

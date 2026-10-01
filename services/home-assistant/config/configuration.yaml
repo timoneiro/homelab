@@ -5,5 +5,77 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+frontend:
+  # Card color themes used by the dashboard (config/themes/).
+  themes: !include_dir_merge_named themes
+
+# Picks which location the dashboard's Weather tab shows. Each location has
+# its own Met.no and IPMA entries (weather.<place>_metno, weather.<place>_ipma)
+# and its own cards on the tab, shown only while it is selected. To add one:
+# add it here, set up Met.no and IPMA for it, and add its cards.
+input_select:
+  weather_location:
+    name: Weather location
+    icon: mdi:map-marker
+    options:
+      - Porto
+
+# Readings copied out of each location's Met.no weather entity. The weather
+# entity only holds the current values as attributes, which Home Assistant
+# doesn't keep history for; as sensors with a state_class they are recorded,
+# so the dashboard can show graphs of the last days. The unique_ids predate
+# the per-location naming and are kept so the recorded history carries over.
+template:
+  - sensor:
+      - name: Porto temperature
+        unique_id: outdoor_temperature
+        state: "{{ state_attr('weather.porto_metno', 'temperature') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'temperature') is number }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: Porto humidity
+        unique_id: outdoor_humidity
+        state: "{{ state_attr('weather.porto_metno', 'humidity') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'humidity') is number }}"
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+      - name: Porto dew point
+        unique_id: outdoor_dew_point
+        state: "{{ state_attr('weather.porto_metno', 'dew_point') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'dew_point') is number }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: Porto pressure
+        unique_id: outdoor_pressure
+        state: "{{ state_attr('weather.porto_metno', 'pressure') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'pressure') is number }}"
+        unit_of_measurement: "hPa"
+        device_class: atmospheric_pressure
+        state_class: measurement
+      - name: Porto wind speed
+        unique_id: outdoor_wind_speed
+        state: "{{ state_attr('weather.porto_metno', 'wind_speed') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'wind_speed') is number }}"
+        unit_of_measurement: "km/h"
+        device_class: wind_speed
+        state_class: measurement
+      - name: Porto wind direction
+        unique_id: outdoor_wind_direction
+        state: "{{ state_attr('weather.porto_metno', 'wind_bearing') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'wind_bearing') is number }}"
+        unit_of_measurement: "°"
+        device_class: wind_direction
+        state_class: measurement_angle
+      - name: Porto cloud cover
+        unique_id: outdoor_cloud_cover
+        state: "{{ state_attr('weather.porto_metno', 'cloud_coverage') }}"
+        availability: "{{ state_attr('weather.porto_metno', 'cloud_coverage') is number }}"
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:weather-cloudy
+
 # No `http:` block: since 2026.9 Home Assistant keeps its web server settings
 # in Settings -> System -> Network -> HTTP server (see the README).
