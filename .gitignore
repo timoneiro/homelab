@@ -36,6 +36,7 @@ htpasswd
 
 # Tailscale state dir (contains this node's own keys once authenticated)
 services/tailscale/lib/
+services/tailscale-share/state/
 
 # Pi-hole state dir (pihole.toml holds the admin password hash, cli_pw a
 # plaintext API password)
@@ -51,3 +52,6 @@ Thumbs.db
 
 # --- Local AI assistant context (contains real internal network details) ---
 CLAUDE.md
+
+# Network map with real internal addresses (local-only, like CLAUDE.md)
+docs/network-map.html

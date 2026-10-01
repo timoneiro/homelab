@@ -1,0 +1,47 @@
+services:
+  tailscale-share:
+    container_name: tailscale-share
+    image: tailscale/tailscale:latest
+    pull_policy: always
+    # A second tailnet machine, `share`, that friends are given access to
+    # (admin console -> Machines -> share -> Share) instead of joining the
+    # tailnet. All it does is proxy the shared services listed in
+    # config/serve.json, so friends can't reach anything else: not the NAS's
+    # own ports, not the main node's subnet route, not the admin pages.
+    environment:
+    - TS_AUTHKEY=${TS_AUTHKEY:?set TS_AUTHKEY in .env}
+    # Becomes share.<tailnet>.ts.net, which every shared link is built on.
+    - TS_HOSTNAME=share
+    - TS_STATE_DIR=/var/lib/tailscale
+    # Software networking inside the container: no TUN device, no extra
+    # capabilities, and no tailnet IP on the host. Enough for `serve`.
+    - TS_USERSPACE=true
+    # Resolve service names with Docker's DNS, not the tailnet's Pi-hole.
+    - TS_ACCEPT_DNS=false
+    # The serve setup lives in a file here instead of tailscaled's state, so
+    # it's in the repo and survives a rebuild.
+    - TS_SERVE_CONFIG=/config/serve.json
+    volumes:
+    - ./state:/var/lib/tailscale
+    - ./config:/config:ro
+    extra_hosts:
+    # Jellyfin and Immich are reached on the host's published ports.
+    - "host.docker.internal:host-gateway"
+    networks:
+    # Seerr, Actual and fronds only listen on 127.0.0.1 on the host, so they're
+    # reached over their own Docker networks instead.
+    - arr_requests
+    - actual
+    - fronds
+    restart: unless-stopped
+
+networks:
+  arr_requests:
+    external: true
+    name: arr_requests
+  actual:
+    external: true
+    name: actual_default
+  fronds:
+    external: true
+    name: fronds_default

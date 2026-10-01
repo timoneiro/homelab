@@ -1,0 +1,33 @@
+{
+  "TCP": {
+    "443": { "HTTPS": true },
+    "2283": { "HTTPS": true },
+    "8920": { "HTTPS": true },
+    "9443": { "HTTPS": true },
+    "10443": { "HTTPS": true }
+  },
+  "Web": {
+    "${TS_CERT_DOMAIN}:443": {
+      "Handlers": { "/": { "Proxy": "http://jellyseerr:5055" } }
+    },
+    "${TS_CERT_DOMAIN}:2283": {
+      "Handlers": { "/": { "Proxy": "http://host.docker.internal:2283" } }
+    },
+    "${TS_CERT_DOMAIN}:8920": {
+      "Handlers": { "/": { "Proxy": "http://host.docker.internal:8096" } }
+    },
+    "${TS_CERT_DOMAIN}:9443": {
+      "Handlers": { "/": { "Proxy": "http://actual:5006" } }
+    },
+    "${TS_CERT_DOMAIN}:10443": {
+      "Handlers": { "/": { "Proxy": "http://fronds:8787" } }
+    }
+  },
+  "AllowFunnel": {
+    "${TS_CERT_DOMAIN}:443": false,
+    "${TS_CERT_DOMAIN}:2283": false,
+    "${TS_CERT_DOMAIN}:8920": false,
+    "${TS_CERT_DOMAIN}:9443": false,
+    "${TS_CERT_DOMAIN}:10443": false
+  }
+}

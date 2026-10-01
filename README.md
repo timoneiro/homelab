@@ -12,12 +12,13 @@ Remote access is over Tailscale.
 |---|---|---|
 | [`actual`](services/actual/) | [Actual Budget](https://actualbudget.org), personal finance | 5006 (HTTPS only, [see below](#how-you-reach-things)) |
 | [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
-| [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080, 5055 |
+| [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080; Seerr: 5055 (HTTPS only) |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
-| [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 |
+| [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 (HTTPS only) |
 | [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
 | [`tailscale`](services/tailscale/) | Tailscale subnet router, Pi-hole, and a DNS relay that makes Pi-hole work tailnet-wide | Pi-hole: 80 (LAN only) |
-| [`upsnap`](services/upsnap/) | [UpSnap](https://github.com/seriousm4x/UpSnap), a Wake-on-LAN dashboard for waking a gaming PC remotely | 8090 |
+| [`tailscale-share`](services/tailscale-share/) | A second Tailscale machine, `share`, that friends get access to instead of joining the tailnet ([see below](#sharing-with-friends)) | None (HTTPS proxies only) |
+| [`upsnap`](services/upsnap/) | [UpSnap](https://github.com/seriousm4x/UpSnap), a Wake-on-LAN dashboard for waking a gaming PC remotely | 8090 (HTTPS only) |
 
 Jellyfin (port 8096) also runs on the NAS but isn't in this repo; it's
 deployed directly through UGOS.
@@ -28,16 +29,19 @@ deployed directly through UGOS.
 default, and it's what Homepage links to. It works from anywhere on the
 tailnet, where the NAS's LAN IP only works at home.
 
-**HTTPS via `tailscale serve`** fronts the services that need a secure
-context, using a real certificate for the NAS's MagicDNS name
-(`https://<node>.<tailnet>.ts.net:<port>`):
+**HTTPS via `tailscale serve`** fronts the services below, using a real
+certificate for the NAS's MagicDNS name
+(`https://<node>.<tailnet>.ts.net:<port>`). Their backends publish their
+ports on `127.0.0.1` only, so this is the *only* way in: they aren't on the
+LAN, and other containers can't reach them through the Docker gateway.
 
-| HTTPS port | Backend | Why it needs HTTPS |
+| HTTPS port | Backend | Why it goes through `serve` |
 |---|---|---|
 | 443 | Seerr (5055) | "Install app" (PWA) and web push notifications |
-| 8443 | Homepage (3000) | "Install app" (PWA) |
+| 8443 | Homepage (3000) | "Install app" (PWA). Homepage has no login, so it stays off the LAN. |
 | 9443 | Actual (5006) | Won't load at all otherwise: it needs `SharedArrayBuffer`, which browsers only expose in a secure context. Use this URL even at home. |
 | 10443 | fronds (8787) | The app is served from `https://timoneiro.github.io`, and an HTTPS page can only call an HTTPS server. |
+| 11443 | UpSnap (8090) | Doesn't need HTTPS, but keeps the wake button off the LAN. |
 
 This isn't in any compose file; it lives in tailscaled's own state. Enable
 **HTTPS Certificates** in the Tailscale admin console (DNS page), then run
@@ -48,6 +52,7 @@ tailscale serve --https=443  --bg localhost:5055
 tailscale serve --https=8443 --bg localhost:3000
 tailscale serve --https=9443 --bg localhost:5006
 tailscale serve --https=10443 --bg localhost:8787
+tailscale serve --https=11443 --bg localhost:8090
 tailscale serve status   # shows what's configured
 ```
 
@@ -151,6 +156,46 @@ crash-loops with "You must be logged in to use Remote Control". Remote
 Control needs a full claude.ai login, so a long-lived token from
 `claude setup-token` or an API key won't work. Log in again with the `run`
 command above, then `docker restart claude-actual-agent`.
+
+## Sharing with friends
+
+Friends don't join the tailnet. They get access to one machine, `share`
+([`services/tailscale-share`](services/tailscale-share/)): a second
+Tailscale container whose only job is to proxy the shared services over
+HTTPS. It has no subnet route and no tailnet IP on the NAS, so friends can't
+reach the NAS's own ports, the LAN or the admin pages, whatever the tailnet's
+access rules say. The NAS's main Tailscale node stays for your own devices.
+
+| Address (`https://share.<tailnet>.ts.net…`) | Service | Reached over |
+|---|---|---|
+| (443) | Seerr | `arr_requests` network |
+| `:2283` | Immich | host's published port |
+| `:8920` | Jellyfin | host's published port |
+| `:9443` | Actual | `actual_default` network |
+| `:10443` | fronds | `fronds_default` network |
+
+The proxies are declared in [`config/serve.json`](services/tailscale-share/config/serve.json),
+read at startup through `TS_SERVE_CONFIG`, so no console commands are needed.
+Adding or removing a shared service means editing that file and, if the
+service is only on loopback, joining its Docker network.
+
+**Deploying:** copy `config/` and a filled-in `.env` into a `tailscale-share/`
+folder on the `docker` share, then create the UGOS Project as usual. The
+arr, actual and fronds projects must already be running, since their
+networks are referenced as external. After `share` appears in the admin
+console, turn off its key expiry, or every friend loses access when it
+expires.
+
+**Moving a friend over:**
+
+1. Give them the `share` addresses. While they're still in the tailnet they
+   can already use them, so this step works straight away.
+2. Share the `share` machine with them (admin console → Machines → `share` →
+   Share). They accept with their own Tailscale account.
+3. Once their apps work from that account, remove them from the tailnet.
+
+Seerr's Application URL (used in Discord notification links) should point at
+`share`, since that's the one address every friend can reach.
 
 ## Pi-hole + Tailscale DNS
 

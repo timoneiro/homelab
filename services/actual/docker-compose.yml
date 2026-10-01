@@ -4,7 +4,11 @@ services:
     image: docker.io/actualbudget/actual-server:latest
     pull_policy: always
     ports:
-      - 5006:5006
+      # Loopback only. Actual only works over HTTPS, through `tailscale serve`
+      # (which runs on the host network, so it still reaches this), so the
+      # plain port has no use on the LAN or to other containers.
+      # claude-actual-agent reaches Actual over the Docker network instead.
+      - 127.0.0.1:5006:5006
     volumes:
       - ./data:/data
     restart: unless-stopped

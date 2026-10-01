@@ -4,7 +4,9 @@ services:
     container_name: homepage
     pull_policy: always
     ports:
-      - 3000:3000
+      # Loopback only, reached through `tailscale serve`. Homepage has no
+      # login and lists every service, so it stays off the LAN.
+      - 127.0.0.1:3000:3000
     volumes:
       - ./config:/app/config
     env_file:

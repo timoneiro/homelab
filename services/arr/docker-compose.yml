@@ -15,6 +15,8 @@ services:
       - PGID=10
     ports:
       - 9696:9696
+    networks:
+      - downloads
     restart: unless-stopped
 
 ################################################
@@ -34,6 +36,9 @@ services:
       - PGID=10
     ports:
       - 8989:8989
+    networks:
+      - downloads
+      - requests
     restart: unless-stopped
 
 ############################################
@@ -53,6 +58,9 @@ services:
     environment:
       - PUID=1000
       - PGID=10
+    networks:
+      - downloads
+      - requests
     restart: unless-stopped
 
 ####################################################
@@ -62,6 +70,8 @@ services:
     image: linuxserver/qbittorrent:latest
     container_name: qbittorrent
     hostname: qbittorrent
+    networks:
+      - downloads
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
@@ -96,6 +106,8 @@ services:
     environment:
       - PUID=1000
       - PGID=10
+    networks:
+      - downloads
     restart: unless-stopped
 ####################################################
 # 🎬 SEERR: Request Management (Jellyseerr's successor) 🎬
@@ -108,11 +120,16 @@ services:
     environment:
       - TZ=${TZ:-Etc/UTC}
     ports:
-      - 5055:5055
+      # Loopback only, reached through `tailscale serve --https=443`.
+      - 127.0.0.1:5055:5055
     volumes:
       - /volume2/docker/arr/jellyseerr/config:/app/config
     extra_hosts:
+      # Jellyfin isn't in this stack; Seerr reaches it on the host.
       - "host.docker.internal:host-gateway"
+    networks:
+      # Only Sonarr and Radarr, not the download client or indexers.
+      - requests
     restart: unless-stopped
 ####################################################
 # ⚡ Unpackerr: Unpack rar files ⚡
@@ -122,6 +139,8 @@ services:
     container_name: unpackerr
     volumes:
       - /volume1/jellyfin/Downloads:/downloads
+    networks:
+      - downloads
     restart: always
     user: 1000:100
     # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK,
@@ -176,3 +195,11 @@ services:
     - UN_RADARR_0_DELETE_DELAY=5m
     - UN_RADARR_0_DELETE_ORIG=false
     - UN_RADARR_0_SYNCTHING=false
+
+# Seerr is the one app here other people use, so it only shares a network
+# with the two apps it actually calls. Everything else talks over
+# `downloads`. The apps address each other by service name, so these names
+# are all the config they need.
+networks:
+  downloads: {}
+  requests: {}

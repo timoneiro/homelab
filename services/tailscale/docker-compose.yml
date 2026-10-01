@@ -3,8 +3,16 @@ services:
     container_name: tailscale
     image: tailscale/tailscale:latest
     restart: always
-    volumes:
+    # Kernel-mode tailscaled needs the TUN device and these two capabilities
+    # (interface, routes and firewall rules) -- not `privileged`, which on
+    # the host network would be root on the NAS. The tun module is already
+    # loaded on the host; if it ever isn't, add SYS_MODULE.
+    devices:
     - /dev/net/tun:/dev/net/tun
+    cap_add:
+    - NET_ADMIN
+    - NET_RAW
+    volumes:
     - ./lib/tailscale:/var/lib/tailscale
     environment:
     - TS_AUTH_KEY=${TS_AUTHKEY}
@@ -20,7 +28,6 @@ services:
     # bind directly to the tailscale IP -- e.g. dns-relay below.
     - TS_USERSPACE=false
     network_mode: host
-    privileged: true
 
   pihole:
     container_name: pihole
@@ -37,8 +44,9 @@ services:
         ipv4_address: 192.168.1.254
       dns_relay:
         ipv4_address: 172.21.0.2
+    # No NET_ADMIN: Pi-hole only needs that to run a DHCP server, and the
+    # router does DHCP here.
     cap_add:
-    - NET_ADMIN
     - SYS_TIME
     - SYS_NICE
     volumes:

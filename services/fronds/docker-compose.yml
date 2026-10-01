@@ -4,7 +4,9 @@ services:
     image: ghcr.io/timoneiro/fronds-server:latest
     pull_policy: always
     ports:
-      - 8787:8787
+      # Loopback only. The app can only call it over HTTPS, through
+      # `tailscale serve`, so nothing needs the plain port.
+      - 127.0.0.1:8787:8787
     volumes:
       # Store, generated secrets (household key + push keys) and daily backups.
       - ./data:/data

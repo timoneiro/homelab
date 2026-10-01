@@ -11,8 +11,10 @@ services:
     environment:
       - TZ=${TZ:-Etc/UTC}
       # Host networking means this binds directly on the NAS, so the port
-      # must not clash with anything else running on the host.
-      - UPSNAP_HTTP_LISTEN=0.0.0.0:8090
+      # must not clash with anything else running on the host. Loopback
+      # only, reached through `tailscale serve`, so nobody on the LAN can
+      # wake the PC.
+      - UPSNAP_HTTP_LISTEN=127.0.0.1:8090
     volumes:
       # PocketBase database: device list, users, schedules.
       - ./data:/app/pb_data

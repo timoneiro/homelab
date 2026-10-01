@@ -1,9 +1,10 @@
 ---
 - Media Requests & Automation:
     - Seerr:
-        href: http://100.66.227.104:5055
+        href: "https://{{HOMEPAGE_VAR_TS_FQDN}}"
         description: Request movies & TV shows
         icon: overseerr.png
+        # Through `tailscale serve --https=443`; port 5055 is loopback only.
         # Seerr is Jellyseerr's 2026 successor (ghcr.io/seerr-team/seerr).
         # Its API may not exactly match Homepage's "jellyseerr" widget type
         # yet -- verify at gethomepage.dev/widgets before adding a widget: here.
@@ -121,10 +122,12 @@
 
 - Gaming:
     - Gaming PC:
-        href: http://100.66.227.104:8090
+        href: "https://{{HOMEPAGE_VAR_TS_FQDN}}:11443"
         description: Wake / sleep via UpSnap
         icon: mdi-desktop-tower-monitor
         ping: 192.168.1.192
+        # Through `tailscale serve --https=11443`; UpSnap listens on
+        # loopback only.
         # Ping badge = PC awake/asleep. Wake & sleep are done in UpSnap
         # (Homepage is read-only by design, no action buttons).
 
