@@ -87,6 +87,15 @@
         # --bg localhost:5006` (run in the tailscale container's console)
         # instead of the direct-port pattern everything else here uses.
 
+- Home:
+    - Home Assistant:
+        href: "https://{{HOMEPAGE_VAR_TS_FQDN}}:12443"
+        description: Smart home hub
+        icon: home-assistant.png
+        # Through `tailscale serve --https=12443`; Home Assistant listens on
+        # loopback only (Settings -> System -> Network -> HTTP server), so
+        # host.docker.internal can't reach it for a widget either.
+
 - Network & Host:
     - Pi-hole:
         href: http://192.168.1.254/admin

@@ -42,6 +42,15 @@ services/tailscale-share/state/
 # plaintext API password)
 services/tailscale/etc-pihole/
 
+# Home Assistant writes its state into the same folder as its YAML config:
+# .storage/ holds users, auth tokens and integration credentials. Only the
+# hand-maintained YAML files are tracked.
+services/home-assistant/config/*
+!services/home-assistant/config/configuration.yaml
+!services/home-assistant/config/automations.yaml
+!services/home-assistant/config/scripts.yaml
+!services/home-assistant/config/scenes.yaml
+
 # --- OS / editor cruft -------------------------------------------------------
 .DS_Store
 Thumbs.db

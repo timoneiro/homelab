@@ -1,0 +1,53 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    pull_policy: always
+    # Required: device discovery (mDNS/zeroconf, SSDP) and integrations such
+    # as Google Cast and HomeKit rely on LAN multicast and broadcast, which
+    # don't cross a Docker bridge. Home Assistant's docs require host
+    # networking for the Container install.
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    environment:
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      # configuration.yaml and the other YAML files come from this repo. Home
+      # Assistant also writes its own state here (.storage/, the recorder
+      # database), which is gitignored. Host networking means the web UI
+      # binds 8123 on every NAS interface by default; the listen address set
+      # in Settings -> System -> Network -> HTTP server keeps it on loopback,
+      # reached through `tailscale serve` (see the README).
+      - ./config:/config
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      # Loopback only. Home Assistant is on the host network, so it connects
+      # to 127.0.0.1:1883. Zigbee2MQTT will join this project's default
+      # network and use mqtt://mosquitto:1883 instead.
+      - 127.0.0.1:1883:1883
+    environment:
+      - MQTT_HA_PASSWORD=${MQTT_HA_PASSWORD:?set MQTT_HA_PASSWORD in .env}
+      - MQTT_Z2M_PASSWORD=${MQTT_Z2M_PASSWORD:?set MQTT_Z2M_PASSWORD in .env}
+    # Mosquitto only reads hashed passwords from a file, normally created with
+    # `mosquitto_passwd` in a shell. Building it from .env on every start
+    # keeps the deploy GUI-only and the passwords in one place. The file stays
+    # inside the container, owned by the user Mosquitto drops to.
+    command:
+      - sh
+      - -c
+      - >-
+        mosquitto_passwd -c -b /mosquitto/passwd homeassistant "$$MQTT_HA_PASSWORD" &&
+        mosquitto_passwd -b /mosquitto/passwd zigbee2mqtt "$$MQTT_Z2M_PASSWORD" &&
+        chown mosquitto:mosquitto /mosquitto/passwd && chmod 0700 /mosquitto/passwd &&
+        exec mosquitto -c /mosquitto/config/mosquitto.conf
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      # Retained messages and persistent sessions.
+      - ./mosquitto/data:/mosquitto/data

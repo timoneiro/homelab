@@ -1,0 +1,9 @@
+# Loads the default set of integrations. Do not remove.
+default_config:
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# No `http:` block: since 2026.9 Home Assistant keeps its web server settings
+# in Settings -> System -> Network -> HTTP server (see the README).

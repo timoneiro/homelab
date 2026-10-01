@@ -14,6 +14,7 @@ Remote access is over Tailscale.
 | [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080; Seerr: 5055 (HTTPS only) |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
+| [`home-assistant`](services/home-assistant/) | [Home Assistant](https://www.home-assistant.io), smart-home hub, and Mosquitto, the MQTT broker for Zigbee2MQTT and MQTT devices | 8123 (HTTPS only); Mosquitto: 1883 (NAS only) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 (HTTPS only) |
 | [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
 | [`tailscale`](services/tailscale/) | Tailscale subnet router, Pi-hole, and a DNS relay that makes Pi-hole work tailnet-wide | Pi-hole: 80 (LAN only) |
@@ -42,6 +43,7 @@ LAN, and other containers can't reach them through the Docker gateway.
 | 9443 | Actual (5006) | Won't load at all otherwise: it needs `SharedArrayBuffer`, which browsers only expose in a secure context. Use this URL even at home. |
 | 10443 | fronds (8787) | The app is served from `https://timoneiro.github.io`, and an HTTPS page can only call an HTTPS server. |
 | 11443 | UpSnap (8090) | Doesn't need HTTPS, but keeps the wake button off the LAN. |
+| 12443 | Home Assistant (8123) | Keeps it off the LAN. The Companion app uses this URL at home too. |
 
 This isn't in any compose file; it lives in tailscaled's own state. Enable
 **HTTPS Certificates** in the Tailscale admin console (DNS page), then run
@@ -53,6 +55,7 @@ tailscale serve --https=8443 --bg localhost:3000
 tailscale serve --https=9443 --bg localhost:5006
 tailscale serve --https=10443 --bg localhost:8787
 tailscale serve --https=11443 --bg localhost:8090
+tailscale serve --https=12443 --bg http://127.0.0.1:8123
 tailscale serve status   # shows what's configured
 ```
 
@@ -111,7 +114,8 @@ that live elsewhere. A rebuild also needs:
 - **App data.** Back these up separately; they're gitignored here: the arr
   apps' config folders, Immich's library and Postgres data, Actual's
   `data/`, fronds' `data/` (which also holds its generated household and
-  push keys), UpSnap's `data/`, and Pi-hole's `etc-pihole/`.
+  push keys), UpSnap's `data/`, Home Assistant's `config/` (all of it, not
+  just the YAML tracked here), and Pi-hole's `etc-pihole/`.
 - **Jellyfin**, which runs as its own container outside this repo.
 - **Tailscale admin console settings:**
   - Approve the advertised subnet route, and approve it again after any
@@ -156,6 +160,40 @@ crash-loops with "You must be logged in to use Remote Control". Remote
 Control needs a full claude.ai login, so a long-lived token from
 `claude setup-token` or an API key won't work. Log in again with the `run`
 command above, then `docker restart claude-actual-agent`.
+
+## Home Assistant
+
+Home Assistant runs on the host network, because device discovery relies on
+LAN multicast that doesn't cross a Docker bridge. Its web server settings
+are **not** in `configuration.yaml`. Since 2026.9 they live in the UI, under
+Settings → System → Network → **HTTP server**, and are stored in
+`config/.storage/http`:
+
+| Setting | Value | Why |
+|---|---|---|
+| Listen addresses | `127.0.0.1` | Off the LAN, like the other HTTPS-only services |
+| Trust X-Forwarded-For | On | `tailscale serve` adds that header |
+| Trusted proxies | `127.0.0.1/32`, `::1/128` | Without them, every request through `serve` gets "400 Bad Request" |
+
+Saving these restarts Home Assistant. An admin then has to confirm the new
+settings in the browser within 5 minutes, or they're undone. That makes a
+fresh install a two-step job:
+
+1. Start it with the default settings. It then listens on every interface,
+   so open `http://<NAS tailnet IP>:8123`, create the account, and set the
+   values above.
+2. After the restart, open the `:12443` HTTPS address and confirm there.
+   Confirming through `serve` proves the proxy settings work. If it
+   doesn't work, Home Assistant reverts after 5 minutes and step 1's
+   address works again.
+
+Don't put an `http:` block back in `configuration.yaml`. Home Assistant only
+imports it once as a pending change, which reverts unless someone confirms
+it within 5 minutes, and stops accepting it in 2027.2.
+
+Mosquitto, in the same project, builds its password file from `.env` each
+time it starts, so there's no console step. Home Assistant's MQTT
+integration connects to `127.0.0.1:1883` as `homeassistant`.
 
 ## Sharing with friends
 
