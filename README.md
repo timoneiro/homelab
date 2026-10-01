@@ -11,6 +11,7 @@ Remote access is over Tailscale.
 | Folder | What runs there | Web UI port |
 |---|---|---|
 | [`actual`](services/actual/) | [Actual Budget](https://actualbudget.org), personal finance | 5006 (HTTPS only, [see below](#how-you-reach-things)) |
+| [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080, 5055 |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 |
@@ -119,9 +120,37 @@ that live elsewhere. A rebuild also needs:
 - **Tailscale clients**, each of which has to opt in to "Use subnet routes"
   to reach LAN-only addresses.
 - **Router**, whose DHCP DNS server has to point at Pi-hole's LAN IP.
+- **claude-actual-agent's Claude login**, which lives in its
+  `claude-nas-agent-config` volume. Create the volume and log in before the
+  first start ([see below](#claude-actual-agent)).
 - **Pi-hole blocklists.** Add them under Group Management → Adlists, then
   run Tools → Update Gravity to apply them. Pi-hole's Settings → Teleporter
   exports these and the rest of its config as one backup file.
+
+## claude-actual-agent
+
+A container running `claude remote-control`, so a Claude Code session with
+the [actual-budget skill](services/claude-actual-agent/SKILL.md) is always
+reachable from the Claude mobile app or claude.ai/code. It joins the
+`actual` project's network and talks to the server at `http://actual:5006`.
+
+This is the one service deployed over SSH instead of through UGOS. It's
+built from a local Dockerfile, and Claude Code's login needs an interactive
+terminal. From the service folder on the NAS:
+
+```sh
+cp config/.env.example config/.env    # then fill it in
+docker volume create claude-nas-agent-config
+docker compose build
+docker compose run --rm --entrypoint claude claude-actual-agent   # run /login, then /exit
+docker compose up -d
+```
+
+**The login expires after about 30 days** and the container then
+crash-loops with "You must be logged in to use Remote Control". Remote
+Control needs a full claude.ai login, so a long-lived token from
+`claude setup-token` or an API key won't work. Log in again with the `run`
+command above, then `docker restart claude-actual-agent`.
 
 ## Pi-hole + Tailscale DNS
 

@@ -1,0 +1,37 @@
+services:
+  claude-actual-agent:
+    container_name: claude-actual-agent
+    build: .
+    image: claude-actual-agent:latest
+    # Remote Control shows the hostname as the device name in the Claude
+    # app; without this it's the random container ID.
+    hostname: actual-budget
+    command:
+      - remote-control
+      - --name
+      - Actual Budget
+      - --remote-control-session-name-prefix
+      - Finance
+    volumes:
+      # Claude Code's login and settings. Created once by hand and logged in
+      # with /login (see the README), so it's external here.
+      - claude-config:/home/node/.claude
+      # Actual server URL, password and sync ID for cli.mjs.
+      - ./config/.env:/home/node/actual-budget/.env:ro
+      - ./SKILL.md:/home/node/.claude/skills/actual-budget/SKILL.md:ro
+    networks:
+      - actual
+    restart: unless-stopped
+
+volumes:
+  claude-config:
+    external: true
+    # Keeps the name from before the container was renamed.
+    name: claude-nas-agent-config
+
+networks:
+  # The actual project's default network, so the agent reaches the server
+  # at http://actual:5006.
+  actual:
+    external: true
+    name: actual_default

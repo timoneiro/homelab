@@ -1,0 +1,13 @@
+{
+  "name": "actual-budget-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal CLI wrapper around @actual-app/api for querying an Actual Budget server, used by the actual-budget Claude Code skill.",
+  "dependencies": {
+    "@actual-app/api": "^26.8.1"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}
