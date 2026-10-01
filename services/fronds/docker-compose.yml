@@ -1,0 +1,21 @@
+services:
+  fronds:
+    container_name: fronds
+    image: ghcr.io/timoneiro/fronds-server:latest
+    pull_policy: always
+    ports:
+      - 8787:8787
+    volumes:
+      # Store, generated secrets (household key + push keys) and daily backups.
+      - ./data:/data
+    environment:
+      # Reminder times and "due today" are computed in this timezone.
+      - TZ=${TZ:-Etc/UTC}
+      # Only the hosted fronds app may call the server from a browser.
+      - ALLOWED_ORIGINS=https://timoneiro.github.io
+    restart: unless-stopped
+    # The app runs on https://timoneiro.github.io, which may only call an HTTPS
+    # server — front this with `tailscale serve` from the tailscale
+    # container's console (see the fronds server README). The server code
+    # (needed to create a household in the app) is printed in this container's
+    # log on every start.

@@ -12,6 +12,7 @@ Remote access is over Tailscale.
 |---|---|---|
 | [`actual`](services/actual/) | [Actual Budget](https://actualbudget.org), personal finance | 5006 (HTTPS only, [see below](#how-you-reach-things)) |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080, 5055 |
+| [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 |
 | [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
 | [`tailscale`](services/tailscale/) | Tailscale subnet router, Pi-hole, and a DNS relay that makes Pi-hole work tailnet-wide | Pi-hole: 80 (LAN only) |
@@ -35,6 +36,7 @@ context, using a real certificate for the NAS's MagicDNS name
 | 443 | Seerr (5055) | "Install app" (PWA) and web push notifications |
 | 8443 | Homepage (3000) | "Install app" (PWA) |
 | 9443 | Actual (5006) | Won't load at all otherwise: it needs `SharedArrayBuffer`, which browsers only expose in a secure context. Use this URL even at home. |
+| 10443 | fronds (8787) | The app is served from `https://timoneiro.github.io`, and an HTTPS page can only call an HTTPS server. |
 
 This isn't in any compose file; it lives in tailscaled's own state. Enable
 **HTTPS Certificates** in the Tailscale admin console (DNS page), then run
@@ -44,6 +46,7 @@ this in the `tailscale` container's console (shell: `/bin/sh`):
 tailscale serve --https=443  --bg localhost:5055
 tailscale serve --https=8443 --bg localhost:3000
 tailscale serve --https=9443 --bg localhost:5006
+tailscale serve --https=10443 --bg localhost:8787
 tailscale serve status   # shows what's configured
 ```
 
@@ -101,7 +104,8 @@ that live elsewhere. A rebuild also needs:
   keep a copy somewhere safe, such as a password manager.
 - **App data.** Back these up separately; they're gitignored here: the arr
   apps' config folders, Immich's library and Postgres data, Actual's
-  `data/`, UpSnap's `data/`, and Pi-hole's `etc-pihole/`.
+  `data/`, fronds' `data/` (which also holds its generated household and
+  push keys), UpSnap's `data/`, and Pi-hole's `etc-pihole/`.
 - **Jellyfin**, which runs as its own container outside this repo.
 - **Tailscale admin console settings:**
   - Approve the advertised subnet route, and approve it again after any
