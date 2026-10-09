@@ -12,8 +12,8 @@ services:
       # The trip database and the server code: small and written on every
       # change, so they stay in the docker folder on the NVMe.
       - ./data:/data
-      # Bulk storage on the HDD volume: daily copies of the database (30
-      # days) now, trip documents and photos later.
+      # Bulk storage on the HDD volume: trips' photos and documents, and
+      # daily copies of the database (30 days).
       - ${WAYPOINTS_FILES_DIR:?set WAYPOINTS_FILES_DIR in .env}:/files
     environment:
       # Only the hosted waypoints app may call the server from a browser.

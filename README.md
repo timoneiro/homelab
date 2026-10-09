@@ -14,7 +14,7 @@ Remote access is over Tailscale.
 | [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080; Seerr: 5055 (HTTPS only) |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
-| [`waypoints`](services/waypoints/) | Sync server for [waypoints](https://github.com/waypoints-pwa/waypoints), a trip companion app hosted on GitHub Pages. Database on the docker folder, daily copies (later documents and photos) on the HDD volume | 8788 (API only, called over HTTPS) |
+| [`waypoints`](services/waypoints/) | Sync server for [waypoints](https://github.com/waypoints-pwa/waypoints), a trip companion app hosted on GitHub Pages. Database on the docker folder; photos, documents and daily copies on the HDD volume | 8788 (API only, called over HTTPS) |
 | [`home-assistant`](services/home-assistant/) | [Home Assistant](https://www.home-assistant.io), smart-home hub, and Mosquitto, the MQTT broker for Zigbee2MQTT and MQTT devices | 8123 (HTTPS only); Mosquitto: 1883 (NAS only) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 (HTTPS only) |
 | [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
@@ -118,7 +118,7 @@ that live elsewhere. A rebuild also needs:
   apps' config folders, Immich's library and Postgres data, Actual's
   `data/`, fronds' `data/` (which also holds its generated household and
   push keys), waypoints' `data/` (its trip database and server code) and its
-  folder on the HDD volume (daily copies of that database), UpSnap's `data/`, Home Assistant's `config/` (all of it, not
+  folder on the HDD volume (trips' photos and documents, and daily copies of that database), UpSnap's `data/`, Home Assistant's `config/` (all of it, not
   just the YAML tracked here), and Pi-hole's `etc-pihole/`.
 - **Jellyfin**, which runs as its own container outside this repo.
 - **Tailscale admin console settings:**
