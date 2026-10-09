@@ -1,0 +1,24 @@
+services:
+  waypoints:
+    container_name: waypoints
+    image: ghcr.io/waypoints-pwa/waypoints-server:latest
+    pull_policy: always
+    ports:
+      # Loopback only. The app can only call it over HTTPS: through
+      # `tailscale serve` on this node, and through the `share` node for
+      # friends, which reaches it over this project's network.
+      - 127.0.0.1:8788:8788
+    volumes:
+      # The trip database and the server code: small and written on every
+      # change, so they stay in the docker folder on the NVMe.
+      - ./data:/data
+      # Bulk storage on the HDD volume: daily copies of the database (30
+      # days) now, trip documents and photos later.
+      - ${WAYPOINTS_FILES_DIR:?set WAYPOINTS_FILES_DIR in .env}:/files
+    environment:
+      # Only the hosted waypoints app may call the server from a browser.
+      - ALLOWED_ORIGINS=https://waypoints-pwa.github.io
+    restart: unless-stopped
+    # The server code (to join as the admin in the app: Settings → Sync
+    # server → I run the server) is printed in this container's log on every
+    # start, and kept in ./data/secrets.json.

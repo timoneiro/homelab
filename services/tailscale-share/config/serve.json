@@ -4,7 +4,8 @@
     "2283": { "HTTPS": true },
     "8920": { "HTTPS": true },
     "9443": { "HTTPS": true },
-    "10443": { "HTTPS": true }
+    "10443": { "HTTPS": true },
+    "13443": { "HTTPS": true }
   },
   "Web": {
     "${TS_CERT_DOMAIN}:443": {
@@ -21,6 +22,9 @@
     },
     "${TS_CERT_DOMAIN}:10443": {
       "Handlers": { "/": { "Proxy": "http://fronds:8787" } }
+    },
+    "${TS_CERT_DOMAIN}:13443": {
+      "Handlers": { "/": { "Proxy": "http://waypoints:8788" } }
     }
   },
   "AllowFunnel": {
@@ -28,6 +32,7 @@
     "${TS_CERT_DOMAIN}:2283": false,
     "${TS_CERT_DOMAIN}:8920": false,
     "${TS_CERT_DOMAIN}:9443": false,
-    "${TS_CERT_DOMAIN}:10443": false
+    "${TS_CERT_DOMAIN}:10443": false,
+    "${TS_CERT_DOMAIN}:13443": false
   }
 }

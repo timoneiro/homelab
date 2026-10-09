@@ -28,11 +28,12 @@ services:
     # Jellyfin and Immich are reached on the host's published ports.
     - "host.docker.internal:host-gateway"
     networks:
-    # Seerr, Actual and fronds only listen on 127.0.0.1 on the host, so they're
-    # reached over their own Docker networks instead.
+    # Seerr, Actual, fronds and waypoints only listen on 127.0.0.1 on the
+    # host, so they're reached over their own Docker networks instead.
     - arr_requests
     - actual
     - fronds
+    - waypoints
     restart: unless-stopped
 
 networks:
@@ -45,3 +46,6 @@ networks:
   fronds:
     external: true
     name: fronds_default
+  waypoints:
+    external: true
+    name: waypoints_default

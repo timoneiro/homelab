@@ -14,6 +14,7 @@ Remote access is over Tailscale.
 | [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080; Seerr: 5055 (HTTPS only) |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |
+| [`waypoints`](services/waypoints/) | Sync server for [waypoints](https://github.com/waypoints-pwa/waypoints), a trip companion app hosted on GitHub Pages. Database on the docker folder, daily copies (later documents and photos) on the HDD volume | 8788 (API only, called over HTTPS) |
 | [`home-assistant`](services/home-assistant/) | [Home Assistant](https://www.home-assistant.io), smart-home hub, and Mosquitto, the MQTT broker for Zigbee2MQTT and MQTT devices | 8123 (HTTPS only); Mosquitto: 1883 (NAS only) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 (HTTPS only) |
 | [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
@@ -44,6 +45,7 @@ LAN, and other containers can't reach them through the Docker gateway.
 | 10443 | fronds (8787) | The app is served from `https://timoneiro.github.io`, and an HTTPS page can only call an HTTPS server. |
 | 11443 | UpSnap (8090) | Doesn't need HTTPS, but keeps the wake button off the LAN. |
 | 12443 | Home Assistant (8123) | Keeps it off the LAN. The Companion app uses this URL at home too. |
+| 13443 | waypoints (8788) | The app is served from `https://waypoints-pwa.github.io`, and an HTTPS page can only call an HTTPS server. |
 
 This isn't in any compose file; it lives in tailscaled's own state. Enable
 **HTTPS Certificates** in the Tailscale admin console (DNS page), then run
@@ -56,6 +58,7 @@ tailscale serve --https=9443 --bg localhost:5006
 tailscale serve --https=10443 --bg localhost:8787
 tailscale serve --https=11443 --bg localhost:8090
 tailscale serve --https=12443 --bg http://127.0.0.1:8123
+tailscale serve --https=13443 --bg localhost:8788
 tailscale serve status   # shows what's configured
 ```
 
@@ -114,7 +117,8 @@ that live elsewhere. A rebuild also needs:
 - **App data.** Back these up separately; they're gitignored here: the arr
   apps' config folders, Immich's library and Postgres data, Actual's
   `data/`, fronds' `data/` (which also holds its generated household and
-  push keys), UpSnap's `data/`, Home Assistant's `config/` (all of it, not
+  push keys), waypoints' `data/` (its trip database and server code) and its
+  folder on the HDD volume (daily copies of that database), UpSnap's `data/`, Home Assistant's `config/` (all of it, not
   just the YAML tracked here), and Pi-hole's `etc-pihole/`.
 - **Jellyfin**, which runs as its own container outside this repo.
 - **Tailscale admin console settings:**
@@ -211,6 +215,7 @@ access rules say. The NAS's main Tailscale node stays for your own devices.
 | `:8920` | Jellyfin | host's published port |
 | `:9443` | Actual | `actual_default` network |
 | `:10443` | fronds | `fronds_default` network |
+| `:13443` | waypoints | `waypoints_default` network |
 
 The proxies are declared in [`config/serve.json`](services/tailscale-share/config/serve.json),
 read at startup through `TS_SERVE_CONFIG`, so no console commands are needed.
@@ -219,7 +224,7 @@ service is only on loopback, joining its Docker network.
 
 **Deploying:** copy `config/` and a filled-in `.env` into a `tailscale-share/`
 folder on the `docker` share, then create the UGOS Project as usual. The
-arr, actual and fronds projects must already be running, since their
+arr, actual, fronds and waypoints projects must already be running, since their
 networks are referenced as external. After `share` appears in the admin
 console, turn off its key expiry, or every friend loses access when it
 expires.
