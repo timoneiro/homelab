@@ -156,30 +156,6 @@
         data:
           tag: pihole
 
-# --- qBittorrent -------------------------------------------------------------
-# While the gaming PC is awake, qBittorrent switches to its alternative
-# (slower) speed limits so game streaming gets the bandwidth. The limits
-# themselves are set in qBittorrent: Options -> Speed -> Alternative Rate
-# Limits.
-
-- id: qbittorrent_slow_while_gaming
-  alias: Slow downloads while the gaming PC is on
-  description: Turn on qBittorrent's alternative speed limits while the gaming PC is awake.
-  mode: restart
-  triggers:
-    - trigger: state
-      entity_id: binary_sensor.gaming_pc
-      to: "on"
-      id: awake
-    - trigger: state
-      entity_id: binary_sensor.gaming_pc
-      to: "off"
-      for: "00:05:00"
-      id: asleep
-  actions:
-    - action: "switch.turn_{{ 'on' if trigger.id == 'awake' else 'off' }}"
-      target:
-        entity_id: switch.qbittorrent_alternative_speed
 # --- Weather -----------------------------------------------------------------
 # IPMA issues warnings per district. The area IPMA picked from Home Assistant's
 # home location is read from its device name, and the district from the
