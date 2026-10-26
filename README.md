@@ -17,7 +17,7 @@ Remote access is over Tailscale.
 | [`waypoints`](services/waypoints/) | Sync server for [waypoints](https://github.com/waypoints-pwa/waypoints), a trip companion app hosted on GitHub Pages. Database on the docker folder; photos, documents and daily copies on the HDD volume | 8788 (API only, called over HTTPS) |
 | [`home-assistant`](services/home-assistant/) | [Home Assistant](https://www.home-assistant.io), smart-home hub, and Mosquitto, the MQTT broker for Zigbee2MQTT and MQTT devices | 8123 (HTTPS only); Mosquitto: 1883 (NAS only) |
 | [`homepage`](services/homepage/) | [Homepage](https://gethomepage.dev) dashboard linking everything, with live-stats widgets | 3000 (HTTPS only) |
-| [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified | 2283 |
+| [`immich`](services/immich/) | Photo and video backup, using Immich's upstream compose file unmodified. Database on the docker folder; the library on the HDD volume | 2283 |
 | [`tailscale`](services/tailscale/) | Tailscale subnet router, Pi-hole, and a DNS relay that makes Pi-hole work tailnet-wide | Pi-hole: 80 (LAN only) |
 | [`tailscale-share`](services/tailscale-share/) | A second Tailscale machine, `share`, that friends get access to instead of joining the tailnet ([see below](#sharing-with-friends)) | None (HTTPS proxies only) |
 | [`upsnap`](services/upsnap/) | [UpSnap](https://github.com/seriousm4x/UpSnap), a Wake-on-LAN dashboard for waking a gaming PC remotely | 8090 (HTTPS only) |
@@ -110,11 +110,14 @@ Being GUI-only changes a few habits:
 ## Rebuilding: what this repo doesn't capture
 
 The compose files recreate the containers, not their data or the settings
-that live elsewhere. A rebuild also needs:
+that live elsewhere. The `.env` files and app data below are backed up
+weekly: [`scripts/backup-nas.ps1`](scripts/backup-nas.ps1) pulls them to a
+Windows PC from a scheduled task. [docs/RESTORE.md](docs/RESTORE.md) walks through a
+restore. A rebuild also needs:
 
-- **`.env` files.** These hold the real secrets and exist nowhere else, so
-  keep a copy somewhere safe, such as a password manager.
-- **App data.** Back these up separately; they're gitignored here: the arr
+- **`.env` files.** These hold the real secrets and exist nowhere else
+  except the backups.
+- **App data**, gitignored here: the arr
   apps' config folders, Immich's library and Postgres data, Actual's
   `data/`, fronds' `data/` (which also holds its generated household and
   push keys), waypoints' `data/` (its trip database and server code) and its
@@ -411,6 +414,8 @@ services/<name>/
 ├── .env                 # real values: gitignored, lives on the NAS
 └── config/, …           # non-secret files the compose file mounts
 docs/USAGE.md            # commit checklist and syncing from the NAS
+docs/RESTORE.md          # bringing everything back after an outage
+scripts/backup-nas.ps1   # weekly backup of the NAS to a Windows PC
 ```
 
 This repo is public, so it holds no secrets and no personal details. Values
