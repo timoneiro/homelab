@@ -85,8 +85,7 @@ Write-Log "backup of \\$Nas to $Destination"
 $docker = "\\$Nas\docker"
 Copy-Tree $docker (Join-Path $current 'docker') @(
     '/MIR',
-    # album: Immich's library before it moved to its own share on the HDDs
-    '/XD', "$docker\immich\album", "$docker\immich\postgres", 'MediaCover', 'logs',
+    '/XD', "$docker\immich\postgres", 'MediaCover', 'logs',
     # ipc-socket: qBittorrent's Unix socket, which can't be read over SMB
     '/XF', 'pihole-FTL.db*', 'gravity_old.db', 'ipc-socket')
 

@@ -110,10 +110,9 @@ Being GUI-only changes a few habits:
 ## Rebuilding: what this repo doesn't capture
 
 The compose files recreate the containers, not their data or the settings
-that live elsewhere. The `.env` files and app data below are backed up:
-[`scripts/backup-nas.ps1`](scripts/backup-nas.ps1) pulls them to a Windows
-PC weekly (a scheduled task), and UGOS Sync & Backup copies the docker share
-to the HDD volume nightly. [docs/RESTORE.md](docs/RESTORE.md) walks through a
+that live elsewhere. The `.env` files and app data below are backed up
+weekly: [`scripts/backup-nas.ps1`](scripts/backup-nas.ps1) pulls them to a
+Windows PC from a scheduled task. [docs/RESTORE.md](docs/RESTORE.md) walks through a
 restore. A rebuild also needs:
 
 - **`.env` files.** These hold the real secrets and exist nowhere else
@@ -416,7 +415,7 @@ services/<name>/
 └── config/, …           # non-secret files the compose file mounts
 docs/USAGE.md            # commit checklist and syncing from the NAS
 docs/RESTORE.md          # bringing everything back after an outage
-scripts/backup-nas.ps1   # nightly backup of the NAS to a Windows PC
+scripts/backup-nas.ps1   # weekly backup of the NAS to a Windows PC
 ```
 
 This repo is public, so it holds no secrets and no personal details. Values

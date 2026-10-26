@@ -9,13 +9,11 @@ console and the router.
 
 ## Where the backups are
 
-| Copy | Location | Made by | Protects against |
-|---|---|---|---|
-| PC | `C:\NAS-backup` on the Windows PC | [`scripts/backup-nas.ps1`](../scripts/backup-nas.ps1), weekly scheduled task `NAS backup` (Sundays; runs when the PC is next on if it was off) | Losing the whole NAS |
-| HDD | `/volume1/backups/docker` on the NAS | UGOS Sync & Backup, nightly | Losing the NVMe |
-
-On the PC, `last-run.json` says when the last run finished and whether it
-worked. Inside `C:\NAS-backup`:
+One copy, on the Windows PC in `C:\NAS-backup`, made by
+[`scripts/backup-nas.ps1`](../scripts/backup-nas.ps1) from the weekly
+scheduled task `NAS backup` (Sundays; if the PC was off, it runs when the PC
+is next on). `last-run.json` says when the last run finished and whether it
+worked. Inside:
 
 ```
 current\docker\<stack>\   the docker share as it was: live docker-compose.yaml, .env, data
@@ -25,8 +23,8 @@ current\waypoints\        waypoints' folder on the HDD volume
 snapshots\<date>.tgz      the docker share per run, 8 weeks back
 ```
 
-The PC copy can be up to a week old; for an NVMe failure, the nightly HDD
-copy is fresher. Use `current\` unless the latest run already had the damage in it (a
+The copy can be up to a week old, so changes since the last run are lost.
+Use `current\` unless the latest run already had the damage in it (a
 corrupted database, a bad change), in which case unpack an older snapshot.
 
 The PC copy **contains every secret**: `.env` files, Tailscale node keys,
@@ -50,24 +48,23 @@ first:
 
 ## Scenario A: the NVMe died, the NAS is fine
 
-The HDDs still hold Jellyfin, the Immich library, waypoints' files and the
-HDD copy of the docker share, so only the docker share needs restoring.
+The HDDs still hold Jellyfin, the Immich library (with its database
+dumps) and waypoints' files, so only the docker share needs restoring.
 
 1. Replace the NVMe and recreate its storage pool and volume in UGOS.
 2. Recreate the `docker` shared folder on it and reinstall the Docker app if
    UGOS asks.
-3. In UGOS File Manager, copy the contents of `backups/docker` into
-   `docker`. (From the PC instead: copy `current\docker\*` to the share over
-   SMB.)
+3. Copy `C:\NAS-backup\current\docker\*` to the share over SMB.
 4. Recreate the Projects in the [order above](#order), as in
    [Recreating a Project](#recreating-a-project).
-5. [Restore Immich's database](#immich) from its latest dump.
+5. [Restore Immich's database](#immich) from the newest dump in the
+   `immich` share's `backups/` on the NAS, which is fresher than the PC's.
 
 ## Scenario B: the whole NAS is gone
 
 1. Set up the new NAS: an SSD volume for `docker`, an HDD volume for the
    rest. Recreate the shared folders `docker` (SSD), `immich`, `jellyfin`,
-   `waypoints`, `backups` (HDD).
+   `waypoints` (HDD).
 2. Copy from `C:\NAS-backup\current` over SMB:
 
    | From | To |
