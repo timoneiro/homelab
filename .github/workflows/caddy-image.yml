@@ -1,0 +1,38 @@
+name: caddy image
+
+# Builds services/caddy/Dockerfile and publishes it as
+# ghcr.io/timoneiro/caddy-cloudflare. Rebuilt weekly so Caddy and the
+# Cloudflare plugin pick up fixes; the NAS gets them on its next redeploy
+# (pull_policy: always).
+on:
+  push:
+    branches: [main]
+    paths:
+      - services/caddy/Dockerfile
+      - .github/workflows/caddy-image.yml
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/caddy
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/timoneiro/caddy-cloudflare:latest

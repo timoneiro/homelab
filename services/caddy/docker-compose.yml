@@ -1,0 +1,24 @@
+services:
+  caddy:
+    container_name: caddy
+    image: ghcr.io/timoneiro/caddy-cloudflare:latest
+    pull_policy: always
+    # Host network: Caddy reaches every service on localhost, including the
+    # ones bound to 127.0.0.1 only, and Home Assistant sees requests from
+    # 127.0.0.1 (already a trusted proxy there, so no HA change needed).
+    network_mode: host
+    environment:
+      # Cloudflare API token limited to Zone -> DNS -> Edit on timoneiro.app
+      # only. Used to create the temporary DNS record that proves domain
+      # ownership for the wildcard certificate.
+      - CF_API_TOKEN=${CF_API_TOKEN:?set CF_API_TOKEN in .env}
+      # The NAS's Tailscale IP. Caddy listens only there, so the names work
+      # on the tailnet and nowhere else (not on the LAN, not publicly).
+      - CADDY_BIND=${CADDY_BIND:?set CADDY_BIND in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account key. Losing this only means Caddy
+      # requests a new certificate on the next start.
+      - ./data:/data
+      - ./config:/config
+    restart: unless-stopped
