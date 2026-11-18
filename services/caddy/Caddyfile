@@ -6,7 +6,7 @@
 # One wildcard certificate covers every name, so public certificate logs
 # show `*.home.timoneiro.app`, not a list of the services running here.
 #
-# The old `tailscale serve` URLs (caixinha.<tailnet>.ts.net:<port>) keep
+# The old `tailscale serve` URLs (<nas>.<tailnet>.ts.net:<port>) keep
 # working alongside these, except Seerr's, which moves off port 443 so Caddy
 # can have it.
 
