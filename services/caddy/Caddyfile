@@ -1,0 +1,107 @@
+# Friendly HTTPS names for the NAS's services on the tailnet:
+# https://<name>.home.timoneiro.app
+#
+# Cloudflare DNS has one record, `*.home` -> the NAS's Tailscale IP, set to
+# "DNS only" (grey cloud; Cloudflare's proxy can't reach a tailnet address).
+# One wildcard certificate covers every name, so public certificate logs
+# show `*.home.timoneiro.app`, not a list of the services running here.
+#
+# The old `tailscale serve` URLs (caixinha.<tailnet>.ts.net:<port>) keep
+# working alongside these, except Seerr's, which moves off port 443 so Caddy
+# can have it.
+
+{
+	# Only the Tailscale IP, so nothing is exposed on the LAN or publicly.
+	default_bind {$CADDY_BIND}
+	# HTTPS only; nothing listens on port 80.
+	auto_https disable_redirects
+}
+
+*.home.timoneiro.app {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+		# Check the challenge record against public DNS, not Pi-hole.
+		resolvers 1.1.1.1
+	}
+
+	@homepage host home.home.timoneiro.app
+	handle @homepage {
+		reverse_proxy localhost:3000
+	}
+
+	@actual host actual.home.timoneiro.app
+	handle @actual {
+		reverse_proxy localhost:5006
+	}
+
+	@ha host ha.home.timoneiro.app
+	handle @ha {
+		reverse_proxy 127.0.0.1:8123
+	}
+
+	@seerr host seerr.home.timoneiro.app
+	handle @seerr {
+		reverse_proxy localhost:5055
+	}
+
+	@chat host chat.home.timoneiro.app
+	handle @chat {
+		reverse_proxy localhost:3080
+	}
+
+	@fronds host fronds.home.timoneiro.app
+	handle @fronds {
+		reverse_proxy localhost:8787
+	}
+
+	@waypoints host waypoints.home.timoneiro.app
+	handle @waypoints {
+		reverse_proxy localhost:8788
+	}
+
+	@immich host photos.home.timoneiro.app
+	handle @immich {
+		reverse_proxy localhost:2283
+	}
+
+	# Jellyfin runs as its own container outside this repo, on host port 8096.
+	# Video goes over the tailnet only, never through Cloudflare.
+	@jellyfin host jellyfin.home.timoneiro.app
+	handle @jellyfin {
+		reverse_proxy localhost:8096
+	}
+
+	@upsnap host wake.home.timoneiro.app
+	handle @upsnap {
+		reverse_proxy localhost:8090
+	}
+
+	@sonarr host sonarr.home.timoneiro.app
+	handle @sonarr {
+		reverse_proxy localhost:8989
+	}
+
+	@radarr host radarr.home.timoneiro.app
+	handle @radarr {
+		reverse_proxy localhost:7878
+	}
+
+	@prowlarr host prowlarr.home.timoneiro.app
+	handle @prowlarr {
+		reverse_proxy localhost:9696
+	}
+
+	@bazarr host bazarr.home.timoneiro.app
+	handle @bazarr {
+		reverse_proxy localhost:6767
+	}
+
+	@qbit host torrents.home.timoneiro.app
+	handle @qbit {
+		reverse_proxy localhost:8080
+	}
+
+	handle {
+		respond "No service with that name" 404
+	}
+}

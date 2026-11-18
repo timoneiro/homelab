@@ -38,6 +38,9 @@ htpasswd
 services/tailscale/lib/
 services/tailscale-share/state/
 
+# Caddy's autosaved config (certificates live in services/caddy/data/)
+services/caddy/config/
+
 # Pi-hole state dir (pihole.toml holds the admin password hash, cli_pw a
 # plaintext API password)
 services/tailscale/etc-pihole/
