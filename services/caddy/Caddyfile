@@ -3,6 +3,12 @@
 #
 # Cloudflare DNS has one record, `*.home` -> the NAS's Tailscale IP, set to
 # "DNS only" (grey cloud; Cloudflare's proxy can't reach a tailnet address).
+#
+# UGOS's own web server holds port 443 on every address (it only redirects to
+# the admin UI on 9443), so Caddy can't listen there itself. Instead Caddy
+# listens on loopback and Tailscale passes tailnet port 443 through to it,
+# still encrypted, in the NAS's tailscale container console:
+#   tailscale serve --tcp=443 --bg tcp://localhost:8444
 # One wildcard certificate covers every name, so public certificate logs
 # show `*.home.timoneiro.app`, not a list of the services running here.
 #
@@ -11,8 +17,10 @@
 # can have it.
 
 {
-	# Only the Tailscale IP, so nothing is exposed on the LAN or publicly.
+	# 127.0.0.1 (from .env): reachable only through `tailscale serve` above,
+	# so nothing is exposed on the LAN or publicly.
 	default_bind {$CADDY_BIND}
+	https_port 8444
 	# HTTPS only; nothing listens on port 80.
 	auto_https disable_redirects
 }

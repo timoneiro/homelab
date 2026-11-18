@@ -11,7 +11,7 @@ Remote access is over Tailscale.
 | Folder | What runs there | Web UI port |
 |---|---|---|
 | [`actual`](services/actual/) | [Actual Budget](https://actualbudget.org), personal finance | 5006 (HTTPS only, [see below](#how-you-reach-things)) |
-| [`caddy`](services/caddy/) | [Caddy](https://caddyserver.com) reverse proxy giving each service an HTTPS name under `*.home.timoneiro.app` on the tailnet, with one wildcard certificate obtained through Cloudflare DNS | 443 (Tailscale IP only) |
+| [`caddy`](services/caddy/) | [Caddy](https://caddyserver.com) reverse proxy giving each service an HTTPS name under `*.home.timoneiro.app` on the tailnet, with one wildcard certificate obtained through Cloudflare DNS | 8444 (loopback; tailnet port 443 forwarded by `tailscale serve`) |
 | [`claude-actual-agent`](services/claude-actual-agent/) | Claude Code session with access to Actual, for logging expenses from a phone over Remote Control ([see below](#claude-actual-agent)) | None |
 | [`arr`](services/arr/) | Media automation: Prowlarr, Sonarr, Radarr, Bazarr, qBittorrent, Seerr (requests), Unpackerr (extracts downloaded archives) | 9696, 8989, 7878, 6767, 8080; Seerr: 5055 (HTTPS only) |
 | [`fronds`](services/fronds/) | Sync and watering-reminder server for [fronds](https://github.com/timoneiro/fronds), a houseplant app hosted on GitHub Pages | 8787 (API only, called over HTTPS) |

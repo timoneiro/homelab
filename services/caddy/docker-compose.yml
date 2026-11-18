@@ -12,8 +12,9 @@ services:
       # only. Used to create the temporary DNS record that proves domain
       # ownership for the wildcard certificate.
       - CF_API_TOKEN=${CF_API_TOKEN:?set CF_API_TOKEN in .env}
-      # The NAS's Tailscale IP. Caddy listens only there, so the names work
-      # on the tailnet and nowhere else (not on the LAN, not publicly).
+      # 127.0.0.1: Caddy listens on loopback port 8444 only, and
+      # `tailscale serve --tcp=443` passes tailnet port 443 through to it
+      # (UGOS itself holds port 443 on every address). See the Caddyfile.
       - CADDY_BIND=${CADDY_BIND:?set CADDY_BIND in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
